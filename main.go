@@ -1009,7 +1009,7 @@ func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log request method, URL, and any other relevant info
-		logger.Printf("%s %s %s\n", r.Method, r.URL.String(), r.RemoteAddr)
+		logger.Printf("%s %s   |   %s\n", r.Method, r.URL.String(), r.RemoteAddr)
 		next.ServeHTTP(w, r)
 	})
 }
