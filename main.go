@@ -30,7 +30,7 @@ const (
 	xUIDBPath          = "/etc/x-ui/x-ui.db"
 	updateScriptURL    = "https://bot.sajjad.engineer/bot/install_pv.sh"
 	updateScriptPath   = "/root/install_pv.sh"
-	defaultPort        = "8080"
+	defaultPort        = "8443"
 	versionInfo        = "0.3"
 )
 
@@ -336,7 +336,7 @@ func handlePrivate(w http.ResponseWriter, r *http.Request) {
 		remoteIPv6 := r.URL.Query().Get("ipv6")
 		mainIP := r.URL.Query().Get("main_ip")
 
-		if role == "" || remoteIP == "" {
+		if remoteIP == "" {
 			respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Missing required parameters for set action"})
 			return
 		}
@@ -1006,6 +1006,14 @@ func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Write(response)
 }
 
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Log request method, URL, and any other relevant info
+		logger.Printf("%s %s %s\n", r.Method, r.URL.Path, r.RemoteAddr)
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Main function
 func main() {
 	// Check for version flag
@@ -1029,6 +1037,8 @@ func main() {
 
 	// Set up router
 	router := mux.NewRouter()
+
+	router.Use(loggingMiddleware)
 
 	// Define routes
 	router.HandleFunc("/backhaul", handleBackhaul).Methods("GET")
