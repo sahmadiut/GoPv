@@ -1070,6 +1070,7 @@ func main() {
 				err := server.ListenAndServeTLS(certFiles["webCertFile"], certFiles["webKeyFile"])
 				if err != nil {
 					logger.Printf("Error starting server with SSL: %v\n", err)
+					time.Sleep(5 * time.Second)
 				}
 			}
 		}()
@@ -1081,6 +1082,7 @@ func main() {
 				err := server.ListenAndServe()
 				if err != nil {
 					logger.Printf("Error starting server: %v\n", err)
+					time.Sleep(5 * time.Second)
 				}
 			}
 		}()
