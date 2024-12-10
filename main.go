@@ -544,7 +544,7 @@ func handleUpdate(w http.ResponseWriter, r *http.Request) {
 
 // Handler for /version
 func handleVersion(w http.ResponseWriter, r *http.Request) {
-	logger.Println("Version 0.5")
+	logger.Println("Version " + versionInfo)
 	respondJSON(w, http.StatusOK, map[string]string{"version": versionInfo})
 }
 
@@ -967,7 +967,7 @@ func handleWarpSetConfig(w http.ResponseWriter, r *http.Request) {
 
 // Helper function to respond with JSON
 func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
-	response, err := json.Marshal(payload)
+	response, err := json.MarshalIndent(payload, "", "  ")
 	if err != nil {
 		logger.Printf("JSON marshal error: %v\n", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -1032,7 +1032,6 @@ func main() {
 				err := server.ListenAndServeTLS(certFiles["webCertFile"], certFiles["webKeyFile"])
 				if err != nil {
 					logger.Printf("Error starting server with SSL: %v\n", err)
-					time.Sleep(5 * time.Second)
 				}
 			}
 		}()
@@ -1044,7 +1043,6 @@ func main() {
 				err := server.ListenAndServe()
 				if err != nil {
 					logger.Printf("Error starting server: %v\n", err)
-					time.Sleep(5 * time.Second)
 				}
 			}
 		}()
