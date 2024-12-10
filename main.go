@@ -31,7 +31,7 @@ const (
 	updateScriptURL    = "https://bot.sajjad.engineer/bot/install_pv.sh"
 	updateScriptPath   = "/root/install_pv.sh"
 	defaultPort        = "8443"
-	versionInfo        = "0.5"
+	versionInfo        = "0.2"
 )
 
 // Global variables
@@ -980,6 +980,12 @@ func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
 
 // Main function
 func main() {
+	// Check for version flag
+	if len(os.Args) > 1 && os.Args[1] == "-v" {
+		fmt.Println(versionInfo)
+		return
+	}
+
 	// Install private tool
 	if err := installPrivate(); err != nil {
 		logger.Fatalf("Failed to install private tool: %v\n", err)
