@@ -30,8 +30,8 @@ const (
 	xUIDBPath          = "/etc/x-ui/x-ui.db"
 	updateScriptURL    = "https://bot.sajjad.engineer/bot/install_pv.sh"
 	updateScriptPath   = "/root/install_pv.sh"
-	defaultPort        = "8443"
-	versionInfo        = "0.2"
+	defaultPort        = "8080"
+	versionInfo        = "0.3"
 )
 
 // Global variables
@@ -1018,7 +1018,7 @@ func main() {
 	// Server configuration
 	server := &http.Server{
 		Handler:      corsHandler,
-		Addr:         "[::]:8080",
+		Addr:         "[::]:" + defaultPort,
 		WriteTimeout: 60 * time.Second,
 		ReadTimeout:  60 * time.Second,
 	}
@@ -1028,6 +1028,7 @@ func main() {
 		go func() {
 			for {
 				logger.Println("Starting the server with SSL...")
+				logger.Println("addr: ", server.Addr)
 				err := server.ListenAndServeTLS(certFiles["webCertFile"], certFiles["webKeyFile"])
 				if err != nil {
 					logger.Printf("Error starting server with SSL: %v\n", err)
@@ -1039,6 +1040,7 @@ func main() {
 		go func() {
 			for {
 				logger.Println("Starting the server without SSL...")
+				logger.Println("addr: ", server.Addr)
 				err := server.ListenAndServe()
 				if err != nil {
 					logger.Printf("Error starting server: %v\n", err)
