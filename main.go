@@ -452,21 +452,19 @@ func parsePrivateShowOutput(output string) ([]map[string]interface{}, error) {
 		// Initialize configuration map
 		config := make(map[string]interface{})
 
-		// Extract the name (assuming "Name:" line is first)
+		// Extract the name (from "Configuration file:" line)
 		nameLine := strings.TrimSpace(lines[0])
-		if strings.HasPrefix(nameLine, "Name: ") {
-			config["name"] = strings.TrimPrefix(nameLine, "Name: ")
-		} else if strings.HasPrefix(nameLine, "Configuration file: ") {
-			// If name is actually in the "Configuration file: ..." format
+		if strings.HasPrefix(nameLine, "Configuration file: ") {
 			config["name"] = strings.TrimPrefix(nameLine, "Configuration file: ")
 		} else {
-			// In case of unexpected name format
+			// If we can't find the correct prefix, we might need additional handling here
 			config["name"] = nameLine
 		}
 
 		// Extract local and remote info (handle possible malformed fields)
 		if len(lines) > 1 {
-			localParts := strings.Split(strings.TrimPrefix(lines[1], "Local: "), " ")
+			localLine := strings.TrimPrefix(lines[1], "Local is: ")
+			localParts := strings.Split(localLine, " ")
 			if len(localParts) >= 2 {
 				config["local"] = localParts[0]
 				config["local_role"] = strings.Trim(localParts[1], "()")
@@ -478,7 +476,8 @@ func parsePrivateShowOutput(output string) ([]map[string]interface{}, error) {
 		}
 
 		if len(lines) > 2 {
-			remoteParts := strings.Split(strings.TrimPrefix(lines[2], "Remote: "), " ")
+			remoteLine := strings.TrimPrefix(lines[2], "Remote is: ")
+			remoteParts := strings.Split(remoteLine, " ")
 			if len(remoteParts) >= 2 {
 				config["remote"] = remoteParts[0]
 				config["remote_role"] = strings.Trim(remoteParts[1], "()")
@@ -495,19 +494,14 @@ func parsePrivateShowOutput(output string) ([]map[string]interface{}, error) {
 			config["remote_ipv6"] = "Unknown"
 		}
 
+		// Handle GRE IPv6 fields with proper checks
 		if len(lines) > 4 {
-			config["remote_ipv6_gre"] = strings.TrimPrefix(lines[4], "GRE IPv6: ")
+			config["remote_ipv6_gre"] = strings.TrimPrefix(lines[4], "Remote IPv6 GRE: ")
 		} else {
 			config["remote_ipv6_gre"] = "N/A"
 		}
 
-		if len(lines) > 5 {
-			config["remote_ipv6_gre_native"] = strings.TrimPrefix(lines[5], "GRE Native IPv6: ")
-		} else {
-			config["remote_ipv6_gre_native"] = "N/A"
-		}
-
-		// Fetch logs
+		// Fetch logs using the script
 		commandLog := fmt.Sprintf("sudo %s service %s loge", privateScriptPath, config["remote"])
 		logOutput, err := runScript(commandLog, "", false)
 		if err != nil {
@@ -521,6 +515,7 @@ func parsePrivateShowOutput(output string) ([]map[string]interface{}, error) {
 			}
 		}
 
+		// Append the configuration to the result list
 		configurations = append(configurations, config)
 	}
 
