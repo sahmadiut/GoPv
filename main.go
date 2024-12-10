@@ -449,18 +449,51 @@ func parsePrivateShowOutput(output string) ([]map[string]interface{}, error) {
 			continue
 		}
 
+		// Initialize configuration map
 		config := make(map[string]interface{})
-		config["name"] = strings.TrimPrefix(lines[0], "Name: ")
 
-		localParts := strings.Split(strings.TrimPrefix(lines[1], "Local: "), " ")
-		config["local"] = localParts[0]
-		config["local_role"] = strings.Trim(localParts[1], "()")
+		// Extract the name (assuming "Name:" line is first)
+		nameLine := strings.TrimSpace(lines[0])
+		if strings.HasPrefix(nameLine, "Name: ") {
+			config["name"] = strings.TrimPrefix(nameLine, "Name: ")
+		} else if strings.HasPrefix(nameLine, "Configuration file: ") {
+			// If name is actually in the "Configuration file: ..." format
+			config["name"] = strings.TrimPrefix(nameLine, "Configuration file: ")
+		} else {
+			// In case of unexpected name format
+			config["name"] = nameLine
+		}
 
-		remoteParts := strings.Split(strings.TrimPrefix(lines[2], "Remote: "), " ")
-		config["remote"] = remoteParts[0]
-		config["remote_role"] = strings.Trim(remoteParts[1], "()")
+		// Extract local and remote info (handle possible malformed fields)
+		if len(lines) > 1 {
+			localParts := strings.Split(strings.TrimPrefix(lines[1], "Local: "), " ")
+			if len(localParts) >= 2 {
+				config["local"] = localParts[0]
+				config["local_role"] = strings.Trim(localParts[1], "()")
+			} else {
+				// Fallback if parsing fails
+				config["local"] = "Unknown"
+				config["local_role"] = "Unknown"
+			}
+		}
 
-		config["remote_ipv6"] = strings.Split(strings.TrimPrefix(lines[3], "Remote IPv6: "), " ")[0]
+		if len(lines) > 2 {
+			remoteParts := strings.Split(strings.TrimPrefix(lines[2], "Remote: "), " ")
+			if len(remoteParts) >= 2 {
+				config["remote"] = remoteParts[0]
+				config["remote_role"] = strings.Trim(remoteParts[1], "()")
+			} else {
+				// Fallback if parsing fails
+				config["remote"] = "Unknown"
+				config["remote_role"] = "Unknown"
+			}
+		}
+
+		if len(lines) > 3 {
+			config["remote_ipv6"] = strings.Split(strings.TrimPrefix(lines[3], "Remote IPv6: "), " ")[0]
+		} else {
+			config["remote_ipv6"] = "Unknown"
+		}
 
 		if len(lines) > 4 {
 			config["remote_ipv6_gre"] = strings.TrimPrefix(lines[4], "GRE IPv6: ")
