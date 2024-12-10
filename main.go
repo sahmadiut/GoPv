@@ -77,10 +77,10 @@ func runScript(command string, executable string, removeColor bool) (string, err
 		cmd = exec.CommandContext(ctx, "sh", "-c", command)
 	}
 
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("%s", removeANSICodes(string(output)))
-	}
+	output, _ := cmd.CombinedOutput()
+	//if err != nil {
+	//	return "", fmt.Errorf("%s", removeANSICodes(string(output)))
+	//}
 
 	result := string(output)
 	if removeColor {
@@ -976,7 +976,6 @@ func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write(response)
-	w.Write([]byte("\n"))
 }
 
 // Main function
