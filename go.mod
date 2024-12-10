@@ -1,4 +1,4 @@
-module GoPV
+module GoPv
 
 go 1.23
 
