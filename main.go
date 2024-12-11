@@ -29,7 +29,9 @@ const (
 	privateInstallCmd2 = "chmod +x /usr/local/bin/private"
 	xUIDBPath          = "/etc/x-ui/x-ui.db"
 	defaultPort        = "8443"
-	versionInfo        = "0.7"
+	updateScriptURL    = "https://bot.sajjad.engineer/bot/gopv.sh"
+	updateScriptPath   = "/root/gopv.sh"
+	versionInfo        = "0.8"
 )
 
 // Global variables
@@ -541,17 +543,30 @@ func handleXray(w http.ResponseWriter, r *http.Request) {
 
 // Handler for /update
 func handleUpdate(w http.ResponseWriter, r *http.Request) {
-	// Define the command to execute the script directly via Bash and curl
-	command := "bash <(curl -fsSL https://bot.softmeta.tech/bot/gopv.sh) start"
+	command1 := fmt.Sprintf("wget -O %s %s > /dev/null 2>&1", updateScriptPath, updateScriptURL)
+	if _, err := runScript(command1, "", false); err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
 
-	// Execute the command asynchronously
+	command2 := fmt.Sprintf("chmod +x %s", updateScriptPath)
+	if _, err := runScript(command2, "", false); err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	command3 := fmt.Sprintf("%s -f > /dev/null 2>&1", updateScriptPath)
 	go func() {
-		if _, err := runScript(command, "", false); err != nil {
+		if _, err := runScript(command3, "", false); err != nil {
 			logger.Printf("Update script error: %v\n", err)
 		}
 	}()
 
-	// Respond with success
+	if err := installPrivate(); err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
 	respondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
