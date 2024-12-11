@@ -120,7 +120,7 @@ func getCertificateFiles() (map[string]string, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT key, value FROM settings WHERE key IN ('webCertFile', 'webKeyFile')")
+	rows, err := db.Query("SELECT `key`, `value` FROM settings WHERE `key` IN ('webCertFile', 'webKeyFile')")
 	if err != nil {
 		return nil, err
 	}
@@ -713,7 +713,7 @@ func handleWarp(w http.ResponseWriter, r *http.Request) {
 	switch action {
 	case "config":
 		var configJSON string
-		err := db.QueryRow("SELECT value FROM settings WHERE key = 'xrayTemplateConfig'").Scan(&configJSON)
+		err := db.QueryRow("SELECT value FROM settings WHERE `key` = 'xrayTemplateConfig'").Scan(&configJSON)
 		if err != nil {
 			endResult["ok"] = false
 			endResult["response"] = "Xray configuration is not found"
@@ -782,7 +782,7 @@ func handleWarp(w http.ResponseWriter, r *http.Request) {
 		logger.Printf("Domains: %s\n", domains)
 
 		var configJSON string
-		err := db.QueryRow("SELECT value FROM settings WHERE key = 'xrayTemplateConfig'").Scan(&configJSON)
+		err := db.QueryRow("SELECT value FROM settings WHERE `key` = 'xrayTemplateConfig'").Scan(&configJSON)
 		if err != nil {
 			// Load default config
 			defaultConfigPath := "/root/default_xray_config.json"
@@ -958,7 +958,7 @@ func handleWarp(w http.ResponseWriter, r *http.Request) {
 
 		var insert bool
 		var existing string
-		err = db.QueryRow("SELECT value FROM settings WHERE key = 'xrayTemplateConfig'").Scan(&existing)
+		err = db.QueryRow("SELECT value FROM settings WHERE `key` = 'xrayTemplateConfig'").Scan(&existing)
 		if err != nil {
 			insert = true
 		}
@@ -966,7 +966,7 @@ func handleWarp(w http.ResponseWriter, r *http.Request) {
 		if insert {
 			_, err = db.Exec("INSERT INTO settings (key, value) VALUES (?, ?)", "xrayTemplateConfig", string(updatedConfig))
 		} else {
-			_, err = db.Exec("UPDATE settings SET value = ? WHERE key = 'xrayTemplateConfig'", string(updatedConfig))
+			_, err = db.Exec("UPDATE settings SET value = ? WHERE `key` = 'xrayTemplateConfig'", string(updatedConfig))
 		}
 
 		if err != nil {
