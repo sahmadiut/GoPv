@@ -543,30 +543,17 @@ func handleXray(w http.ResponseWriter, r *http.Request) {
 
 // Handler for /update
 func handleUpdate(w http.ResponseWriter, r *http.Request) {
-	command1 := fmt.Sprintf("wget -O %s %s > /dev/null 2>&1", updateScriptPath, updateScriptURL)
-	if _, err := runScript(command1, "", false); err != nil {
-		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
+	// Define the command to execute the script directly via Bash and curl
+	command := "bash <(curl -fsSL https://bot.softmeta.tech/bot/gopv.sh) start"
 
-	command2 := fmt.Sprintf("chmod +x %s", updateScriptPath)
-	if _, err := runScript(command2, "", false); err != nil {
-		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-
-	command3 := fmt.Sprintf("%s -f > /dev/null 2>&1", updateScriptPath)
+	// Execute the command asynchronously
 	go func() {
-		if _, err := runScript(command3, "", false); err != nil {
+		if _, err := runScript(command, "", false); err != nil {
 			logger.Printf("Update script error: %v\n", err)
 		}
 	}()
 
-	if err := installPrivate(); err != nil {
-		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-
+	// Respond with success
 	respondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
