@@ -1,4 +1,4 @@
-# .goreleaser.yml
+# .gorele aser.yml
 version: 2
 builds:
   - id: GoPv

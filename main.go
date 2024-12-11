@@ -28,8 +28,6 @@ const (
 	privateInstallCmd1 = "wget -O /usr/local/bin/private https://bot.softmeta.tech/bot/private.sh > /dev/null 2>&1"
 	privateInstallCmd2 = "chmod +x /usr/local/bin/private"
 	xUIDBPath          = "/etc/x-ui/x-ui.db"
-	updateScriptURL    = "https://bot.sajjad.engineer/bot/install_pv.sh"
-	updateScriptPath   = "/root/install_pv.sh"
 	defaultPort        = "8443"
 	versionInfo        = "0.4"
 )
