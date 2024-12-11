@@ -1,12 +1,16 @@
-# .gorele aser.yml
-version: 2
+# .goreleaser.yml
+version: 2  # Specify the config version
+project_name: GoPv
 builds:
   - id: GoPv
+    main: ./main.go
     goos:
       - linux
       - darwin
     goarch:
       - amd64
       - arm64
+    flags:
+      - -ldflags=-s -w
     env:
       - CGO_ENABLED=0
