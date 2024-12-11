@@ -31,7 +31,7 @@ const (
 	updateScriptURL    = "https://bot.sajjad.engineer/bot/install_pv.sh"
 	updateScriptPath   = "/root/install_pv.sh"
 	defaultPort        = "8443"
-	versionInfo        = "0.3"
+	versionInfo        = "0.4"
 )
 
 // Global variables
