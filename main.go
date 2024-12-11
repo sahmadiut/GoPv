@@ -29,7 +29,7 @@ const (
 	privateInstallCmd2 = "chmod +x /usr/local/bin/private"
 	xUIDBPath          = "/etc/x-ui/x-ui.db"
 	defaultPort        = "8443"
-	versionInfo        = "0.4"
+	versionInfo        = "0.6"
 )
 
 // Global variables
