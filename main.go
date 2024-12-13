@@ -31,7 +31,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://bot.sajjad.engineer/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.8"
+	versionInfo        = "0.9"
 )
 
 // Global variables
@@ -561,11 +561,6 @@ func handleUpdate(w http.ResponseWriter, r *http.Request) {
 			logger.Printf("Update script error: %v\n", err)
 		}
 	}()
-
-	if err := installPrivate(); err != nil {
-		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
 
 	respondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
