@@ -23,9 +23,9 @@ import (
 
 // Configuration constants
 const (
-	privateScriptURL   = "https://bot.softmeta.tech/bot/private.sh"
+	privateScriptURL   = "https://k4m.me/bot/private.sh"
 	privateScriptPath  = "/usr/local/bin/private"
-	privateInstallCmd1 = "wget -O /usr/local/bin/private https://bot.softmeta.tech/bot/private.sh > /dev/null 2>&1"
+	privateInstallCmd1 = "wget -O /usr/local/bin/private https://k4m.me/bot/private.sh > /dev/null 2>&1"
 	privateInstallCmd2 = "chmod +x /usr/local/bin/private"
 	xUIDBPath          = "/etc/x-ui/x-ui.db"
 	defaultPort        = "8443"
@@ -156,7 +156,7 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	backCommand := "bash <(curl -fsSL https://bot.softmeta.tech/bot/b.sh)"
+	backCommand := "bash <(curl -fsSL https://k4m.me/bot/b.sh)"
 
 	switch action {
 	case "stop":
