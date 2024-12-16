@@ -128,6 +128,7 @@ func getCertificateFiles() (map[string]string, error) {
 
 	rows, err := db.Query("SELECT `key`, `value` FROM settings WHERE `key` IN ('webCertFile', 'webKeyFile');")
 	if err != nil {
+		logger.Println(err)
 		return nil, err
 	}
 	defer rows.Close()
