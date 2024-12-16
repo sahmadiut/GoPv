@@ -109,10 +109,14 @@ func getCertificateFiles() (map[string]string, error) {
 		}
 	}
 
+	logger.Println("Certificate files not found in predefined paths")
+
 	// Check SQLite database
 	if !fileExists(xUIDBPath) {
 		return nil, errors.New("certificate files not found and x-ui database does not exist")
 	}
+
+	logger.Println("Checking x-ui database for certificate files")
 
 	db, err := sql.Open("sqlite3", xUIDBPath)
 	if err != nil {
@@ -120,11 +124,15 @@ func getCertificateFiles() (map[string]string, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT `key`, `value` FROM settings WHERE `key` IN ('webCertFile', 'webKeyFile')")
+	logger.Println("Database connection established")
+
+	rows, err := db.Query("SELECT `key`, `value` FROM settings WHERE `key` IN ('webCertFile', 'webKeyFile');")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
+	logger.Println("Query executed")
 
 	result := make(map[string]string)
 	for rows.Next() {
@@ -134,6 +142,8 @@ func getCertificateFiles() (map[string]string, error) {
 		}
 		result[key] = value
 	}
+
+	logger.Println("Result fetched")
 
 	if len(result) == 2 {
 		return result, nil
