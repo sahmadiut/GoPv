@@ -29,9 +29,9 @@ const (
 	privateInstallCmd2 = "chmod +x /usr/local/bin/private"
 	xUIDBPath          = "/etc/x-ui/x-ui.db"
 	defaultPort        = "8443"
-	updateScriptURL    = "https://bot.sajjad.engineer/bot/gopv.sh"
+	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.9"
+	versionInfo        = "0.10"
 )
 
 // Global variables
