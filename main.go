@@ -31,7 +31,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.12"
+	versionInfo        = "0.13"
 )
 
 // Global variables
@@ -542,6 +542,15 @@ func handleXray(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	command2 := "self_ipv4=$(hostname -I | awk '{print $1}')"
+	result2, err := runScript(command2, "", false)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	ipv4 := strings.TrimSpace(result2)
+
 	count := strings.TrimSpace(result)
 	logger.Printf("Xray status: %s\n", count)
 	status := "stopped"
@@ -549,7 +558,7 @@ func handleXray(w http.ResponseWriter, r *http.Request) {
 		status = "running"
 	}
 
-	respondJSON(w, http.StatusOK, map[string]string{"xray_status": status})
+	respondJSON(w, http.StatusOK, map[string]string{"xray_status": status, "ipv4": ipv4})
 }
 
 // Handler for /update
