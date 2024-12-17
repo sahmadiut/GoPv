@@ -542,7 +542,7 @@ func handleXray(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	command2 := "self_ipv4=$(hostname -I | awk '{print $1}')"
+	command2 := "hostname -I | awk '{print $1}'"
 	result2, err := runScript(command2, "", false)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
