@@ -213,8 +213,8 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 		if transport != "" {
 			command += fmt.Sprintf(" -t %s", transport)
 		}
-		if pro != "" {
-			command += fmt.Sprintf(" -x %s", pro)
+		if pro == "true" {
+			command += fmt.Sprintf(" -x")
 		}
 
 		result, err := runScript(command, "/bin/bash", true)
