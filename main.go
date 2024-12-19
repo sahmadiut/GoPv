@@ -199,6 +199,7 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 		remoteIP := r.URL.Query().Get("ip")
 		version := r.URL.Query().Get("version")
 		transport := r.URL.Query().Get("transport")
+		pro := r.URL.Query().Get("pro")
 
 		if typ == "" || remoteIP == "" {
 			respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Missing required parameters for set action"})
@@ -211,6 +212,9 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 		}
 		if transport != "" {
 			command += fmt.Sprintf(" -t %s", transport)
+		}
+		if pro != "" {
+			command += fmt.Sprintf(" -x %s", pro)
 		}
 
 		result, err := runScript(command, "/bin/bash", true)
