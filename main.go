@@ -31,7 +31,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.17"
+	versionInfo        = "0.18"
 )
 
 // Global variables
@@ -1033,6 +1033,22 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func getPort() string {
+	// Check for port in command line arguments
+	if len(os.Args) > 2 && os.Args[1] == "-p" {
+		return os.Args[2] // Get port from argument like: -p 8080
+	}
+
+	// Check for port in environment variable
+	port := os.Getenv("PORT")
+	if port != "" {
+		return port // Use the environment variable PORT if set
+	}
+
+	// Fallback to default port
+	return defaultPort
+}
+
 // Main function
 func main() {
 	// Check for version flag
@@ -1072,10 +1088,12 @@ func main() {
 	// Set up CORS
 	corsHandler := cors.Default().Handler(router)
 
+	port := getPort()
+
 	// Server configuration
 	server := &http.Server{
 		Handler:      corsHandler,
-		Addr:         "[::]:" + defaultPort,
+		Addr:         "[::]:" + port,
 		WriteTimeout: 60 * time.Second,
 		ReadTimeout:  60 * time.Second,
 	}
