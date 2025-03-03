@@ -18,6 +18,7 @@ type SystemStats struct {
 	RAMUsage       string `json:"ramUsage"`
 	RAMTotal       string `json:"ramTotal"`
 	DiskUsage      string `json:"diskUsage"`
+	DiskTotal      string `json:"diskTotal"`
 	SwapUsage      string `json:"swapUsage"`
 	SwapTotal      string `json:"swapTotal"`
 	NetworkTraffic string `json:"networkTraffic"`
@@ -131,6 +132,7 @@ func getSystemStats() (*SystemStats, error) {
 		RAMUsage:       convertBytesToReadable(memStats.Used),
 		RAMTotal:       convertBytesToReadable(memStats.Total),
 		DiskUsage:      convertBytesToReadable(diskStats.Used),
+		DiskTotal:      convertBytesToReadable(diskStats.Total),
 		SwapUsage:      convertBytesToReadable(swapStats.Used),
 		SwapTotal:      convertBytesToReadable(swapStats.Total),
 		NetworkTraffic: convertBytesToReadable(netStats[0].BytesSent + netStats[0].BytesRecv),
