@@ -1040,7 +1040,7 @@ func getPort() string {
 	}
 
 	// Check for port in environment variable
-	port := os.Getenv("PORT")
+	port := os.Getenv("GOPV_PORT")
 	if port != "" {
 		return port // Use the environment variable PORT if set
 	}

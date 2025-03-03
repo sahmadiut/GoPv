@@ -14,9 +14,12 @@ import (
 
 type SystemStats struct {
 	CPUUsage       string `json:"cpuUsage"`
+	CPUCores       int    `json:"cpuCores"`
 	RAMUsage       string `json:"ramUsage"`
+	RAMTotal       string `json:"ramTotal"`
 	DiskUsage      string `json:"diskUsage"`
 	SwapUsage      string `json:"swapUsage"`
+	SwapTotal      string `json:"swapTotal"`
 	NetworkTraffic string `json:"networkTraffic"`
 	UploadSpeed    string `json:"uploadSpeed"`
 	DownloadSpeed  string `json:"downloadSpeed"`
@@ -76,8 +79,14 @@ func getSystemStats() (*SystemStats, error) {
 		return nil, err
 	}
 
-	// Get CPU usage
+	// Get CPU usage and count cores
 	cpuPercent, err := cpu.Percent(0, false)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get CPU cores count
+	cpuCores, err := cpu.Counts(true)
 	if err != nil {
 		return nil, err
 	}
@@ -118,9 +127,12 @@ func getSystemStats() (*SystemStats, error) {
 
 	stats := &SystemStats{
 		CPUUsage:       formatFloat(cpuPercent[0]),
+		CPUCores:       cpuCores,
 		RAMUsage:       convertBytesToReadable(memStats.Used),
+		RAMTotal:       convertBytesToReadable(memStats.Total),
 		DiskUsage:      convertBytesToReadable(diskStats.Used),
 		SwapUsage:      convertBytesToReadable(swapStats.Used),
+		SwapTotal:      convertBytesToReadable(swapStats.Total),
 		NetworkTraffic: convertBytesToReadable(netStats[0].BytesSent + netStats[0].BytesRecv),
 		DownloadSpeed:  formatSpeed(downloadSpeed),
 		UploadSpeed:    formatSpeed(uploadSpeed),
