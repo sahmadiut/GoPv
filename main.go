@@ -1084,6 +1084,7 @@ func main() {
 	router.HandleFunc("/version", handleVersion).Methods("GET")
 	router.HandleFunc("/ping", handlePing).Methods("GET")
 	router.HandleFunc("/warp", handleWarp).Methods("GET")
+	router.HandleFunc("/stats", statsHandler).Methods("GET")
 
 	// Set up CORS
 	corsHandler := cors.Default().Handler(router)
