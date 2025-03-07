@@ -23,7 +23,6 @@ import (
 
 // Configuration constants
 const (
-	privateScriptURL   = "https://k4m.me/bot/private.sh"
 	privateScriptPath  = "/usr/local/bin/private"
 	privateInstallCmd1 = "wget -O /usr/local/bin/private https://k4m.me/bot/private.sh > /dev/null 2>&1"
 	privateInstallCmd2 = "chmod +x /usr/local/bin/private"
