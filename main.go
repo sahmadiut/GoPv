@@ -1025,6 +1025,10 @@ func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
 	w.Write(response)
 }
 
+func generate204(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Log request method, URL, and any other relevant info
@@ -1085,6 +1089,8 @@ func main() {
 	router.HandleFunc("/ping", handlePing).Methods("GET")
 	router.HandleFunc("/warp", handleWarp).Methods("GET")
 	router.HandleFunc("/stats", statsHandler).Methods("GET")
+	// generate_204
+	router.HandleFunc("/generate_204", generate204).Methods("GET")
 
 	// Set up CORS
 	corsHandler := cors.Default().Handler(router)
