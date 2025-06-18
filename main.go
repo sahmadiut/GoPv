@@ -6,11 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gorilla/mux"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/cors"
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/net"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -18,11 +22,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/rs/cors"
-	"log"
 )
 
 // Configuration constants
@@ -34,7 +33,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.21"
+	versionInfo        = "0.22"
 )
 
 // Global variables
@@ -415,6 +414,28 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
+
+		// Get local IP using hostname command
+		localIP, err := runScript("hostname -I | awk '{print $1}'", "/bin/bash", true)
+		if err != nil || strings.TrimSpace(localIP) == "" {
+			localIP = "0.0.0.0" // fallback to hardcoded IP
+		} else {
+			localIP = strings.TrimSpace(localIP)
+		}
+
+		// Call https://bot.sajjad.engineer/bot/restarted.php?local_ip=<IP>&service=backhaul
+		notifyURL := fmt.Sprintf("https://bot.sajjad.engineer/bot/restarted.php?local_ip=%s&service=backhaul", localIP)
+
+		// Make HTTP GET request to notify endpoint
+		client := &http.Client{Timeout: 10 * time.Second}
+		resp, err := client.Get(notifyURL)
+		if err != nil {
+			// Log the error but don't fail the main operation
+			log.Printf("Failed to notify restart endpoint: %v", err)
+		} else {
+			resp.Body.Close()
+		}
+
 		status, _ := runScript("systemctl is-active backhaul", "", true)
 		respondJSON(w, http.StatusOK, map[string]interface{}{
 			"response": strings.Split(strings.TrimSpace(result), "\n"),
