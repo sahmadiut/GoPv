@@ -34,7 +34,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.20"
+	versionInfo        = "0.21"
 )
 
 // Global variables
@@ -408,6 +408,18 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		http.ServeFile(w, r, path)
+	case "restart":
+		command := fmt.Sprintf("%s restart", backCommand)
+		result, err := runScript(command, "/bin/bash", true)
+		if err != nil {
+			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		status, _ := runScript("systemctl is-active backhaul", "", true)
+		respondJSON(w, http.StatusOK, map[string]interface{}{
+			"response": strings.Split(strings.TrimSpace(result), "\n"),
+			"status":   strings.TrimSpace(status),
+		})
 	default:
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid action"})
 	}
@@ -1214,6 +1226,33 @@ func getPort() string {
 	return defaultPort
 }
 
+// Handler for /gost
+// Handler for /x-ui
+func handleXui(w http.ResponseWriter, r *http.Request) {
+	action := r.URL.Query().Get("action")
+	if action == "" {
+		respondJSON(w, http.StatusOK, map[string]string{"error": "Missing required action parameter..."})
+		return
+	}
+
+	switch action {
+	case "restart":
+		command := "x-ui restart"
+		result, err := runScript(command, "", true)
+		if err != nil {
+			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		status, _ := runScript("systemctl is-active x-ui", "", true)
+		respondJSON(w, http.StatusOK, map[string]interface{}{
+			"response": strings.Split(strings.TrimSpace(result), "\n"),
+			"status":   strings.TrimSpace(status),
+		})
+	default:
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid action"})
+	}
+}
+
 // Main function
 func main() {
 	// Check for version flag
@@ -1243,6 +1282,7 @@ func main() {
 	// Define routes
 	router.HandleFunc("/backhaul", handleBackhaul).Methods("GET")
 	router.HandleFunc("/gost", handleGost).Methods("GET")
+	router.HandleFunc("/x-ui", handleXui).Methods("GET")
 	router.HandleFunc("/private", handlePrivate).Methods("GET")
 	router.HandleFunc("/", handleXray).Methods("GET")
 	router.HandleFunc("/update", handleUpdate).Methods("GET")
