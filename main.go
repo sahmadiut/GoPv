@@ -33,7 +33,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.22"
+	versionInfo        = "0.23"
 )
 
 // Global variables
@@ -360,6 +360,8 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 		version := r.URL.Query().Get("version")
 		transport := r.URL.Query().Get("transport")
 		pro := r.URL.Query().Get("pro")
+		port := r.URL.Query().Get("port")
+		domain := r.URL.Query().Get("domain")
 
 		if typ == "" || remoteIP == "" {
 			respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Missing required parameters for set action"})
@@ -375,6 +377,13 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 		}
 		if pro == "true" {
 			command += fmt.Sprintf(" -x")
+		}
+		if port != "" {
+			command += fmt.Sprintf(" -p %s", port)
+		}
+
+		if domain != "" && domainRegex.MatchString(domain) {
+			command += fmt.Sprintf(" -d %s", domain)
 		}
 
 		result, err := runScript(command, "/bin/bash", true)
