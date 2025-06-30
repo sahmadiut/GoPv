@@ -33,7 +33,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.24"
+	versionInfo        = "0.25"
 )
 
 // Global variables
@@ -331,29 +331,113 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 
 	switch action {
 	case "stop":
-		command := fmt.Sprintf("%s stop", backCommand)
+		ip := r.URL.Query().Get("ip")
+		var command string
+		if ip != "" {
+			command = fmt.Sprintf("%s stop %s", backCommand, ip)
+		} else {
+			command = fmt.Sprintf("%s stop", backCommand)
+		}
 		result, err := runScript(command, "/bin/bash", true)
 		if err != nil {
 			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		status, _ := runScript("systemctl is-active backhaul", "", true)
+
+		// Check status of specific service or default backhaul
+		var statusCommand string
+		if ip != "" {
+			// Get local IP to determine service name
+			localIP, _ := runScript("hostname -I | awk '{print $1}'", "/bin/bash", true)
+			localIP = strings.TrimSpace(localIP)
+			if ip == localIP {
+				statusCommand = "systemctl is-active backhaul"
+			} else {
+				serviceName := fmt.Sprintf("backhaul_%s", strings.ReplaceAll(ip, ".", "_"))
+				statusCommand = fmt.Sprintf("systemctl is-active %s", serviceName)
+			}
+		} else {
+			statusCommand = "systemctl is-active backhaul"
+		}
+
+		status, _ := runScript(statusCommand, "", true)
 		respondJSON(w, http.StatusOK, map[string]interface{}{
 			"response": strings.Split(strings.TrimSpace(result), "\n"),
 			"status":   strings.TrimSpace(status),
 		})
-	case "status":
-		command := "systemctl status backhaul --no-pager"
-		result, err := runScript(command, "", true)
+
+	case "start":
+		ip := r.URL.Query().Get("ip")
+		var command string
+		if ip != "" {
+			command = fmt.Sprintf("%s start %s", backCommand, ip)
+		} else {
+			command = fmt.Sprintf("%s start", backCommand)
+		}
+		result, err := runScript(command, "/bin/bash", true)
 		if err != nil {
 			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		status, _ := runScript("systemctl is-active backhaul", "", true)
+
+		// Check status of specific service or default backhaul
+		var statusCommand string
+		if ip != "" {
+			// Get local IP to determine service name
+			localIP, _ := runScript("hostname -I | awk '{print $1}'", "/bin/bash", true)
+			localIP = strings.TrimSpace(localIP)
+			if ip == localIP {
+				statusCommand = "systemctl is-active backhaul"
+			} else {
+				serviceName := fmt.Sprintf("backhaul_%s", strings.ReplaceAll(ip, ".", "_"))
+				statusCommand = fmt.Sprintf("systemctl is-active %s", serviceName)
+			}
+		} else {
+			statusCommand = "systemctl is-active backhaul"
+		}
+
+		status, _ := runScript(statusCommand, "", true)
 		respondJSON(w, http.StatusOK, map[string]interface{}{
 			"response": strings.Split(strings.TrimSpace(result), "\n"),
 			"status":   strings.TrimSpace(status),
 		})
+
+	case "status":
+		ip := r.URL.Query().Get("ip")
+		var command string
+		if ip != "" {
+			command = fmt.Sprintf("%s status %s", backCommand, ip)
+		} else {
+			command = "systemctl status backhaul --no-pager"
+		}
+		result, err := runScript(command, "/bin/bash", true)
+		if err != nil {
+			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Check status of specific service or default backhaul
+		var statusCommand string
+		if ip != "" {
+			// Get local IP to determine service name
+			localIP, _ := runScript("hostname -I | awk '{print $1}'", "/bin/bash", true)
+			localIP = strings.TrimSpace(localIP)
+			if ip == localIP {
+				statusCommand = "systemctl is-active backhaul"
+			} else {
+				serviceName := fmt.Sprintf("backhaul_%s", strings.ReplaceAll(ip, ".", "_"))
+				statusCommand = fmt.Sprintf("systemctl is-active %s", serviceName)
+			}
+		} else {
+			statusCommand = "systemctl is-active backhaul"
+		}
+
+		status, _ := runScript(statusCommand, "", true)
+		respondJSON(w, http.StatusOK, map[string]interface{}{
+			"response": strings.Split(strings.TrimSpace(result), "\n"),
+			"status":   strings.TrimSpace(status),
+		})
+
 	case "set":
 		typ := r.URL.Query().Get("type")
 		remoteIP := r.URL.Query().Get("ip")
@@ -397,18 +481,49 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 			"status":   strings.TrimSpace(status),
 			"command":  command,
 		})
+
 	case "log":
-		command := fmt.Sprintf("%s log 20", backCommand)
+		ip := r.URL.Query().Get("ip")
+		lines := r.URL.Query().Get("lines")
+		if lines == "" {
+			lines = "20"
+		}
+
+		var command string
+		if ip != "" {
+			command = fmt.Sprintf("%s log %s %s", backCommand, ip, lines)
+		} else {
+			command = fmt.Sprintf("%s log %s", backCommand, lines)
+		}
+
 		result, err := runScript(command, "/bin/bash", true)
 		if err != nil {
 			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		status, _ := runScript("systemctl is-active backhaul", "", true)
+
+		// Check status of specific service or default backhaul
+		var statusCommand string
+		if ip != "" {
+			// Get local IP to determine service name
+			localIP, _ := runScript("hostname -I | awk '{print $1}'", "/bin/bash", true)
+			localIP = strings.TrimSpace(localIP)
+			if ip == localIP {
+				statusCommand = "systemctl is-active backhaul"
+			} else {
+				serviceName := fmt.Sprintf("backhaul_%s", strings.ReplaceAll(ip, ".", "_"))
+				statusCommand = fmt.Sprintf("systemctl is-active %s", serviceName)
+			}
+		} else {
+			statusCommand = "systemctl is-active backhaul"
+		}
+
+		status, _ := runScript(statusCommand, "", true)
 		respondJSON(w, http.StatusOK, map[string]interface{}{
 			"response": strings.Split(strings.TrimSpace(result), "\n"),
 			"status":   strings.TrimSpace(status),
 		})
+
 	case "file":
 		path := "/root/config.toml"
 		if !fileExists(path) {
@@ -416,9 +531,16 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		http.ServeFile(w, r, path)
+
 	case "restart":
 		ip := r.URL.Query().Get("ip")
-		command := fmt.Sprintf("%s restart %s", backCommand, ip)
+		var command string
+		if ip != "" {
+			command = fmt.Sprintf("%s restart %s", backCommand, ip)
+		} else {
+			command = fmt.Sprintf("%s restart", backCommand)
+		}
+
 		result, err := runScript(command, "/bin/bash", true)
 		if err != nil {
 			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -446,11 +568,62 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 			resp.Body.Close()
 		}
 
-		status, _ := runScript("systemctl is-active backhaul", "", true)
+		// Check status of specific service or default backhaul
+		var statusCommand string
+		if ip != "" {
+			if ip == localIP {
+				statusCommand = "systemctl is-active backhaul"
+			} else {
+				serviceName := fmt.Sprintf("backhaul_%s", strings.ReplaceAll(ip, ".", "_"))
+				statusCommand = fmt.Sprintf("systemctl is-active %s", serviceName)
+			}
+		} else {
+			statusCommand = "systemctl is-active backhaul"
+		}
+
+		status, _ := runScript(statusCommand, "", true)
 		respondJSON(w, http.StatusOK, map[string]interface{}{
 			"response": strings.Split(strings.TrimSpace(result), "\n"),
 			"status":   strings.TrimSpace(status),
 		})
+
+	case "list":
+		command := fmt.Sprintf("%s csv", backCommand)
+		result, err := runScript(command, "/bin/bash", true)
+		if err != nil {
+			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+
+		// Parse CSV data
+		lines := strings.Split(strings.TrimSpace(result), "\n")
+		var services []map[string]string
+
+		if len(lines) > 1 { // Skip header line
+			for _, line := range lines[1:] {
+				if strings.TrimSpace(line) == "" {
+					continue
+				}
+
+				parts := strings.Split(line, ",")
+				if len(parts) >= 5 {
+					service := map[string]string{
+						"service_name": parts[0],
+						"status":       parts[1],
+						"target_ip":    parts[2],
+						"config_file":  parts[3],
+						"log_file":     parts[4],
+					}
+					services = append(services, service)
+				}
+			}
+		}
+
+		respondJSON(w, http.StatusOK, map[string]interface{}{
+			"services": services,
+			"count":    len(services),
+		})
+
 	default:
 		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid action"})
 	}
