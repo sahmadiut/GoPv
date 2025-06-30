@@ -33,7 +33,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.23"
+	versionInfo        = "0.24"
 )
 
 // Global variables
@@ -417,7 +417,8 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 		}
 		http.ServeFile(w, r, path)
 	case "restart":
-		command := fmt.Sprintf("%s restart", backCommand)
+		ip := r.URL.Query().Get("ip")
+		command := fmt.Sprintf("%s restart %s", backCommand, ip)
 		result, err := runScript(command, "/bin/bash", true)
 		if err != nil {
 			respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
