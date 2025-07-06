@@ -2,27 +2,42 @@
 
 # Mock backhaul script to reproduce the formatting issue described in the problem statement
 
-# Function to list backhaul instances with formatting issues (current bad implementation)
+# Function to list backhaul instances with proper formatting
+# Fixed issues:
+# 1. Removed duplicate status output
+# 2. Properly aligned columns using printf
+# 3. Show all instances (both active and inactive) with proper formatting  
+# 4. Use consistent column widths for better readability
 list_backhaul_instances() {
     echo "Active backhaul instances:"
-    echo "Service Name | Status | Target IP | Config File"
-    echo "----------------------------------------"
+    # Use printf for proper column alignment with consistent widths
+    printf "%-27s | %-8s | %-15s | %s\n" "Service Name" "Status" "Target IP" "Config File"
+    echo "--------------------------------------------------------------------"
     
-    # Simulating the bad output format described in the problem statement
-    echo -n "backhaul_185_226_116_57 | "
-    systemctl is-active backhaul_185_226_116_57 2>/dev/null || echo "inactive"
-    systemctl is-active backhaul_185_226_116_57 2>/dev/null || echo "inactive"
-    echo " | 185.226.116.57 | /root/config_185_226_116_57.toml"
+    # List of services to check (both active and inactive)
+    services=(
+        "backhaul_185_226_116_57:185.226.116.57"
+        "backhaul_188_121_117_77:188.121.117.77"
+        "backhaul_2_144_6_171:2.144.6.171"
+    )
     
-    echo -n "backhaul_188_121_117_77 | "
-    systemctl is-active backhaul_188_121_117_77 2>/dev/null || echo "inactive"
-    systemctl is-active backhaul_188_121_117_77 2>/dev/null || echo "inactive"
-    echo " | 188.121.117.77 | /root/config_188_121_117_77.toml"
-    
-    echo -n "backhaul_2_144_6_171 | "
-    systemctl is-active backhaul_2_144_6_171 2>/dev/null || echo "active"
-    systemctl is-active backhaul_2_144_6_171 2>/dev/null || echo "active"
-    echo " | 2.144.6.171 | /root/config_2_144_6_171.toml"
+    for service_info in "${services[@]}"; do
+        IFS=':' read -r service_name target_ip <<< "$service_info"
+        config_file="/root/config_${target_ip//./_}.toml"
+        
+        # Get the actual status of the service (only once, no duplicates)
+        if [[ "$service_name" == "backhaul_2_144_6_171" ]]; then
+            # Simulate this service being active for demo purposes
+            status="active"
+        elif systemctl is-active "$service_name" >/dev/null 2>&1; then
+            status="active"
+        else
+            status="inactive"
+        fi
+        
+        # Format output with consistent column widths using printf
+        printf "%-27s | %-8s | %-15s | %s\n" "$service_name" "$status" "$target_ip" "$config_file"
+    done
 }
 
 # Main script logic
