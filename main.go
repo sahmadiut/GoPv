@@ -34,7 +34,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.26"
+	versionInfo        = "0.27"
 )
 
 // Global variables
@@ -979,12 +979,12 @@ func isValidIP(ip string) bool {
 }
 
 // Run ping command
-func runPing(ip string, count, timeout int, iface string) (string, error) {
+func runPing(target string, count, timeout int, iface string) (string, error) {
 	command := fmt.Sprintf("ping -c %d -W %d", count, timeout)
 	if iface != "" {
 		command += fmt.Sprintf(" -I %s", iface)
 	}
-	command += fmt.Sprintf(" %s", ip)
+	command += fmt.Sprintf(" %s", target)
 	return runScript(command, "", false)
 }
 
@@ -1024,12 +1024,16 @@ func parsePingOutput(output string) ([]float64, *float64, error) {
 // Handler for /ping
 func handlePing(w http.ResponseWriter, r *http.Request) {
 	logger.Println("Ping request received")
-	ip := r.URL.Query().Get("ip")
 
+	host := r.URL.Query().Get("ip")
 	iface := r.URL.Query().Get("interface")
+	summaryMode := r.URL.Query().Get("summary")
 
-	if ip == "" || !isValidIP(ip) {
-		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid or missing required ip parameter"})
+	validHostRegex := regexp.MustCompile(`^[a-zA-Z0-9:.-]+$`)
+	if host == "" || !validHostRegex.MatchString(host) {
+		respondJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "Invalid or missing 'ip' parameter",
+		})
 		return
 	}
 
@@ -1056,8 +1060,16 @@ func handlePing(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	result, err := runPing(ip, count, timeout, iface)
+	result, err := runPing(host, count, timeout, iface)
 	if err != nil {
+		if summaryMode == "true" {
+			respondJSON(w, http.StatusOK, map[string]interface{}{
+				"status": "offline",
+				"target": host,
+				"error":  err.Error(),
+			})
+			return
+		}
 		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
@@ -1068,10 +1080,31 @@ func handlePing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if summaryMode == "true" {
+		status := "online"
+		var finalAvg float64 = 0
+
+		if avgTime != nil {
+			finalAvg = *avgTime
+		}
+
+		if avgTime == nil || finalAvg <= 0 || len(responseTimes) == 0 {
+			status = "unreachable"
+		}
+
+		respondJSON(w, http.StatusOK, map[string]interface{}{
+			"status":   status,
+			"avg_ms":   finalAvg,
+			"received": len(responseTimes),
+		})
+		return
+	}
+	// ---------------------------------
+
 	rawResponse := strings.Split(strings.TrimSpace(result), "\n")
 
 	responseMap := map[string]interface{}{
-		"ip":                    ip,
+		"target":                host,
 		"ping_count":            count,
 		"timeout":               timeout,
 		"response_times_ms":     responseTimes,
