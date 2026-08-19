@@ -34,7 +34,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.27"
+	versionInfo        = "0.28"
 )
 
 // Global variables
@@ -446,6 +446,9 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 		transport := r.URL.Query().Get("transport")
 		pro := r.URL.Query().Get("pro")
 		port := r.URL.Query().Get("port")
+// 		backpack=true&preset=turbo
+        backpack := r.URL.Query().Get("backpack")
+        preset := r.URL.Query().Get("preset")
 		domain := r.URL.Query().Get("domain")
 
 		if typ == "" || remoteIP == "" {
@@ -470,6 +473,14 @@ func handleBackhaul(w http.ResponseWriter, r *http.Request) {
 		if domain != "" && domainRegex.MatchString(domain) {
 			command += fmt.Sprintf(" -d %s", domain)
 		}
+
+        if backpack == "true" {
+            command += fmt.Sprintf(" -b")
+
+            if preset != "" {
+                command += fmt.Sprintf(" -r %s", preset)
+            }
+        }
 
 		result, err := runScript(command, "/bin/bash", true)
 		if err != nil {
