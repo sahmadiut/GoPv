@@ -34,7 +34,7 @@ const (
 	defaultPort        = "8443"
 	updateScriptURL    = "https://k4m.me/bot/gopv.sh"
 	updateScriptPath   = "/root/gopv.sh"
-	versionInfo        = "0.28"
+	versionInfo        = "0.29"
 )
 
 // Global variables
