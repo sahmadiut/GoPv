@@ -1,11 +1,14 @@
 package main
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -320,8 +323,115 @@ func fileExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
+// handleBackhaulECH installs the exact client bundle generated on Iran.
+// The bundle contains the installer and binary, so Kharej needs no downloads.
+func handleBackhaulECH(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		respondJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "ECH setup requires POST with the Iran-generated bundle"})
+		return
+	}
+	remoteIP := r.URL.Query().Get("ip")
+	if !ipv4Regex.MatchString(remoteIP) {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Missing or invalid Iran IPv4"})
+		return
+	}
+	dir, err := os.MkdirTemp("/root", ".gopv-ech-*")
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	defer os.RemoveAll(dir)
+	bundlePath := dir + "/client.tar.gz"
+	bundle, err := os.OpenFile(bundlePath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600)
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 64<<20)
+	_, copyErr := io.Copy(bundle, r.Body)
+	closeErr := bundle.Close()
+	if copyErr != nil || closeErr != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": "Failed to receive ECH bundle (maximum 64 MiB)"})
+		return
+	}
+	scriptPath := dir + "/b.sh"
+	if err := extractBackhaulECHInstaller(bundlePath, scriptPath, remoteIP); err != nil {
+		respondJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+	defer cancel()
+	output, err := exec.CommandContext(ctx, "/bin/bash", scriptPath, "import-ech", bundlePath).CombinedOutput()
+	service := "backhaul_" + strings.ReplaceAll(remoteIP, ".", "_")
+	statusOutput, statusErr := exec.CommandContext(ctx, "systemctl", "is-active", service).CombinedOutput()
+	status := strings.TrimSpace(string(statusOutput))
+	installed := err == nil && statusErr == nil && status == "active"
+	code := http.StatusOK
+	if !installed {
+		code = http.StatusInternalServerError
+	}
+	respondJSON(w, code, map[string]interface{}{
+		"response": strings.Split(strings.TrimSpace(removeANSICodes(string(output))), "\n"),
+		"status": status, "service": service, "ech_installed": installed,
+	})
+}
+
+func extractBackhaulECHInstaller(bundlePath, scriptPath, remoteIP string) error {
+	file, err := os.Open(bundlePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	gz, err := gzip.NewReader(file)
+	if err != nil {
+		return fmt.Errorf("invalid ECH gzip bundle: %w", err)
+	}
+	defer gz.Close()
+	archive := tar.NewReader(gz)
+	foundScript, foundProfile := false, false
+	for {
+		header, err := archive.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if header.Name != "b.sh" && header.Name != "profile.txt" {
+			continue
+		}
+		if header.Typeflag != tar.TypeReg || header.Size <= 0 || header.Size > 1<<20 {
+			return fmt.Errorf("invalid ECH bundle entry: %s", header.Name)
+		}
+		data, err := io.ReadAll(archive)
+		if err != nil {
+			return err
+		}
+		if header.Name == "b.sh" {
+			if err := os.WriteFile(scriptPath, data, 0600); err != nil {
+				return err
+			}
+			foundScript = true
+		} else {
+			lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+			if len(lines) != 3 || lines[1] != remoteIP {
+				return fmt.Errorf("ECH bundle does not match requested Iran IP")
+			}
+			foundProfile = true
+		}
+	}
+	if !foundScript || !foundProfile {
+		return fmt.Errorf("ECH bundle must contain b.sh and profile.txt")
+	}
+	return nil
+}
+
 // Handler for /backhaul
 func handleBackhaul(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Query().Get("action") == "set" && r.URL.Query().Get("type") == "kharej" && r.URL.Query().Get("transport") == "ech" {
+		handleBackhaulECH(w, r)
+		return
+	}
 	action := r.URL.Query().Get("action")
 	if action == "" {
 		respondJSON(w, http.StatusOK, map[string]string{"error": "Missing required action parameter..."})
@@ -1542,7 +1652,7 @@ func main() {
 	router.Use(loggingMiddleware)
 
 	// Define routes
-	router.HandleFunc("/backhaul", handleBackhaul).Methods("GET")
+	router.HandleFunc("/backhaul", handleBackhaul).Methods("GET", "POST")
 	router.HandleFunc("/gost", handleGost).Methods("GET")
 	router.HandleFunc("/x-ui", handleXui).Methods("GET")
 	router.HandleFunc("/private", handlePrivate).Methods("GET")
@@ -1597,3 +1707,4 @@ func main() {
 	// Block main goroutine
 	select {}
 }
+
